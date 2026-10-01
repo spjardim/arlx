@@ -1,2 +1,1 @@
-# arlx
-Audio Reactive Lighting eXecutor
+# Audio Reactive Lighting eXecutor
