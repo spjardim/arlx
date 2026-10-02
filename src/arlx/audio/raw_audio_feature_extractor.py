@@ -1,9 +1,8 @@
-from dataclasses import dataclass
 from typing import Optional
 
 import numpy as np
 
-from arlx.audio.audio_feature_tiers import RawAudioFeatures
+from arlx.audio.audio_feature_tiers import RawAudioBands, RawAudioFeatures
 
 # Rough perceptual band boundaries (Hz) used to bucket spectral energy for
 # lighting effects (kick/bass -> low end, cymbals/hats -> high end).
