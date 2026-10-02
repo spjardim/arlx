@@ -3,15 +3,8 @@ import colorsys
 import numpy as np
 
 from arlx.audio.audio_feature_tiers import AudioFeatures, RawAudioBands
+from arlx.effects.pixels.band_hues import BAND_HUES
 from arlx.effects.pixels.base import PixelEffect
-
-BAND_HUES = {
-    "bass": 0.0,
-    "low_mid": 0.2,
-    "mid": 0.45,
-    "high_mid": 0.65,
-    "treble": 0.85,
-}
 
 
 class BandColorEffect(PixelEffect):

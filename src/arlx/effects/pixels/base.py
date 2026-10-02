@@ -30,8 +30,15 @@ class PixelEffect(ABC):
     def render(self, features: AudioFeatures, dt: float) -> np.ndarray:
         raise NotImplementedError
 
-    def _allow_flash(self, dt: float) -> bool:
+    def _flash_ready(self, dt: float) -> bool:
         """Rate-limits strobe-style behavior to max_strobe_hz.
+
+        Call once per frame regardless of whether a flash actually
+        happens - the clock has to advance every frame to measure real
+        elapsed time. Returns True once enough time has passed since the
+        last _record_flash() call. Checking readiness does not consume
+        it; only _record_flash() does, so a frame that's ready but
+        doesn't flash (e.g. no onset this frame) doesn't reset the clock.
 
         Lives here, not in individual effects, so every strobe-style
         effect enforces the same cap through one shared code path instead
@@ -39,8 +46,8 @@ class PixelEffect(ABC):
         rate limiting.
         """
         self._time_since_last_flash += dt
-        min_interval = 1.0 / self.max_strobe_hz
-        if self._time_since_last_flash >= min_interval:
-            self._time_since_last_flash = 0.0
-            return True
-        return False
+        return self._time_since_last_flash >= (1.0 / self.max_strobe_hz)
+
+    def _record_flash(self) -> None:
+        """Call when a flash actually fires, to reset the rate limiter."""
+        self._time_since_last_flash = 0.0
