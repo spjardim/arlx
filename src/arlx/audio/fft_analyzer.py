@@ -71,7 +71,8 @@ class FFTAnalyzer:
                  smooth_decay: float = SMOOTH_DECAY,
                  attack_db_per_block: float = ATTACK_DB_PER_BLOCK,
                  decay_db_per_block: float = DECAY_DB_PER_BLOCK,
-                 floor_db: float = FLOOR_DB
+                 floor_db: float = FLOOR_DB,
+                 use_window: bool = True
                  ):
         self.sample_rate = sample_rate
         self.block_size = block_size
@@ -81,6 +82,9 @@ class FFTAnalyzer:
         self.attack_db_per_block = attack_db_per_block
         self.decay_db_per_block = decay_db_per_block
         self.floor_db = floor_db
+        self.use_window = use_window
+
+        self.window = np.hanning(block_size)
 
         self.raw_fft_data = np.zeros(block_size // 2)
 
@@ -113,7 +117,8 @@ class FFTAnalyzer:
         return self.smoothed_norm_bins.copy()
 
     def process(self, audio_block: np.ndarray) -> np.ndarray:
-        fft_result = np.fft.fft(audio_block)
+        windowed_block = audio_block * self.window if self.use_window else audio_block
+        fft_result = np.fft.fft(windowed_block)
         self.raw_fft_data = np.abs(fft_result[:self.block_size // 2])
 
         for i, band in enumerate(self.frequency_bands.bands):
