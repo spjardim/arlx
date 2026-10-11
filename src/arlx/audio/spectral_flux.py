@@ -66,7 +66,7 @@ class SpectralFlux:
         return self.global_flux
 
     def get_band_fluxes(self) -> np.ndarray:
-        return self.band_fluxes
+        return self.band_fluxes.copy()
 
     def update_frequency_bands(self, new_frequency_bands: FrequencyBands):
         self.frequency_bands = new_frequency_bands
