@@ -5,10 +5,10 @@ import numpy as np
 
 import dejavu.logic.decoder as decoder
 
-
 class SongDetector:
     def __init__(self, dejavu_instance, record_seconds=5, sample_rate=44100, block_size=1024,
-                 detect_every_seconds=1.0):
+                 detect_every_seconds=1.0, sync_check_seconds=1.0, sync_check_every_seconds=0.5,
+                 sync_confidence_threshold=0.5):
         self.dejavu = dejavu_instance
         self.sample_rate = sample_rate
         self.block_size = block_size
@@ -20,13 +20,22 @@ class SongDetector:
         self.blocks = deque(maxlen=self.block_needed)
         self._block_count = 0
 
+        # Once a song is known, we stop calling dejavu every cycle and switch
+        # to a much cheaper check: does recent live audio still correlate with
+        # the known reference at our estimated position? No spectrogram,
+        # hashing, or DB lookup - just a direct waveform comparison.
+        self.sync_check_blocks_needed = max(int(sync_check_seconds * sample_rate / block_size), 1)
+        self.sync_check_every_blocks = max(int(sync_check_every_seconds / self.block_duration), 1)
+        self.sync_confidence_threshold = sync_confidence_threshold
+        self.sync_check_buffer = deque(maxlen=self.sync_check_blocks_needed)
+        self.sync_confidence = 0.0
+
         self.songs_directory = None
         self.extensions = None
 
         # Position tracking: time_since_anchor resets to 0 on every successful
-        # detection (same song confirmed again, or a different song entirely -
-        # the mechanism doesn't need to tell those apart), so current position
-        # is always "where we last confirmed, plus however long it's been".
+        # detection or sync correction, so current position is always "where
+        # we last confirmed, plus however long it's been".
         self.position_at_anchor = None
         self.time_since_anchor = 0.0
         self.current_position_estimate = None
@@ -41,13 +50,21 @@ class SongDetector:
         self.extensions = extensions
 
     def process(self, sample):
-        self.blocks.append(self._to_int16(sample))
         self.time_since_anchor += self.block_duration
         self._block_count += 1
 
         if self.position_at_anchor is not None:
             self.current_position_estimate = self.position_at_anchor + self.time_since_anchor
 
+        self.blocks.append(self._to_int16(sample))
+        self.sync_check_buffer.append(np.asarray(sample, dtype=np.float32))
+
+        if self.current_song_name is None:
+            self._try_detect()
+        else:
+            self._try_sync_check()
+
+    def _try_detect(self):
         if len(self.blocks) < self.block_needed:
             return
         if self._block_count % self.detect_every_blocks != 0:
@@ -73,6 +90,79 @@ class SongDetector:
         self.position_at_anchor = top["offset_seconds"] + self.record_seconds
         self.time_since_anchor = 0.0
         self.current_position_estimate = self.position_at_anchor
+        self.sync_confidence = 1.0  # just confirmed by a real dejavu match
+
+    def _try_sync_check(self):
+        if len(self.sync_check_buffer) < self.sync_check_blocks_needed:
+            return
+        if self._block_count % self.sync_check_every_blocks != 0:
+            return
+
+        offset_seconds, confidence = self._best_sync_offset()
+        self.sync_confidence = confidence
+
+        if confidence >= self.sync_confidence_threshold:
+            # Cheap correction using the best-matching lag, same idea as
+            # BeatPhaseTracker nudging toward real onsets - no dejavu needed.
+            self.position_at_anchor = self.current_position_estimate + offset_seconds
+            self.time_since_anchor = 0.0
+            self.current_position_estimate = self.position_at_anchor
+        else:
+            # Lost sync (song ended, or a DJ is mixing in something else) -
+            # drop back to full re-detection rather than trust a stale guess.
+            self.current_song_name = None
+            self.current_song_samples = None
+            self.current_song_fs = None
+            self.position_at_anchor = None
+            self.current_position_estimate = None
+
+    def _best_sync_offset(self, max_lag_seconds=0.3, lag_step_seconds=0.01):
+        # Raw waveform correlation has an extremely narrow peak - even a few
+        # milliseconds of misalignment collapses it to near zero (verified
+        # empirically), which a coarse/cheap lag search would almost always
+        # miss. Comparing amplitude envelopes instead degrades gradually with
+        # misalignment, so a coarse search actually finds it.
+        live = np.concatenate(list(self.sync_check_buffer))
+        live_envelope = self._envelope(live, lag_step_seconds)
+        live_centered = live_envelope - np.mean(live_envelope)
+        live_energy = np.sqrt(np.sum(live_centered ** 2))
+        if live_energy == 0:
+            return 0.0, 0.0
+
+        fs = self.current_song_fs
+        center_sample = int(self.current_position_estimate * fs) - len(live)
+        max_lag_samples = int(max_lag_seconds * fs)
+        lag_step_samples = max(int(lag_step_seconds * fs), 1)
+
+        best_confidence = 0.0
+        best_offset_seconds = 0.0
+        for lag in range(-max_lag_samples, max_lag_samples + 1, lag_step_samples):
+            start = center_sample + lag
+            end = start + len(live)
+            if start < 0 or end > len(self.current_song_samples):
+                continue
+
+            reference = self.current_song_samples[start:end]
+            ref_envelope = self._envelope(reference, lag_step_seconds)
+            ref_centered = ref_envelope - np.mean(ref_envelope)
+            ref_energy = np.sqrt(np.sum(ref_centered ** 2))
+            if ref_energy == 0:
+                continue
+
+            correlation = np.dot(live_centered, ref_centered) / (live_energy * ref_energy)
+            if correlation > best_confidence:
+                best_confidence = correlation
+                best_offset_seconds = lag / fs
+
+        return best_offset_seconds, max(best_confidence, 0.0)
+
+    def _envelope(self, signal, resolution_seconds):
+        window = max(int(resolution_seconds * self.sample_rate), 1)
+        n_windows = len(signal) // window
+        if n_windows == 0:
+            return np.abs(signal)
+        trimmed = signal[:n_windows * window].reshape(n_windows, window)
+        return np.max(np.abs(trimmed), axis=1)
 
     def detect_song_from_samples(self, samples):
         """One-shot recognition from a standalone sample array (no rolling buffer/position tracking)."""
@@ -83,6 +173,9 @@ class SongDetector:
 
     def get_current_position_seconds(self):
         return self.current_position_estimate
+
+    def get_sync_confidence(self):
+        return self.sync_confidence
 
     def get_reference_window(self, window_seconds=1.0):
         """Slice of the known reference file spanning +/- window_seconds around

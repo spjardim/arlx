@@ -47,7 +47,7 @@ def audio_worker():
     global song_detector
 
     djv = Dejavu(config)
-    song_detector = SongDetector(djv, record_seconds=RECORD_SECONDS, sample_rate=SAMPLE_RATE, block_size=BLOCK_SIZE)
+    song_detector = SongDetector(djv, record_seconds=RECORD_SECONDS, sample_rate=SAMPLE_RATE, block_size=BLOCK_SIZE, detect_every_seconds=5)
     song_detector.fingerprint_directory(str(REPO_ROOT / "songs"), [".flac"])
 
     for song_path in sorted((REPO_ROOT / "songs").glob("*.flac")):
