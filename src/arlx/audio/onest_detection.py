@@ -12,20 +12,20 @@ DEFAULT_REFRACTORY_DURATION = 0.05
 class OnsetDetection:
     def __init__(self,
                  sample_rate: int = 44100,
-                 hop_length: int = 512,
+                 block_size: int = 512,
                  frequency_bands: FrequencyBands = DEFAULT_FREQUENCY_BANDS,
                  window_duration: float = DEFAULT_WINDOW_DURATION,
                  threshold_multiplier: float = DEFAULT_THRESHOLD_MULTIPLIER,
                  refractory_duration: float = DEFAULT_REFRACTORY_DURATION,
                  ):
         self.sample_rate = sample_rate
-        self.hop_length = hop_length
+        self.hop_length = block_size
         self.frequency_bands = frequency_bands
         self.window_duration = window_duration
         self.threshold_multiplier = threshold_multiplier
         self.refractory_duration = refractory_duration
 
-        self.block_duration = hop_length / sample_rate
+        self.block_duration = block_size / sample_rate
         self.history_length = max(int(window_duration / self.block_duration), 1)
         self.refractory_blocks = max(int(refractory_duration / self.block_duration), 1)
 

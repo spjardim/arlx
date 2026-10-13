@@ -11,20 +11,20 @@ DEFAULT_SMOOTHING = 0.2
 class TempoTracker:
     def __init__(self,
                  sample_rate: int = 44100,
-                 hop_length: int = 512,
+                 block_size: int = 512,
                  min_bpm: float = DEFAULT_MIN_BPM,
                  max_bpm: float = DEFAULT_MAX_BPM,
                  history_duration: float = DEFAULT_HISTORY_DURATION,
                  smoothing: float = DEFAULT_SMOOTHING,
                  ):
         self.sample_rate = sample_rate
-        self.hop_length = hop_length
+        self.hop_length = block_size
         self.min_bpm = min_bpm
         self.max_bpm = max_bpm
         self.history_duration = history_duration
         self.smoothing = smoothing
 
-        self.block_duration = hop_length / sample_rate
+        self.block_duration = block_size / sample_rate
         self.history_length = max(int(history_duration / self.block_duration), 1)
 
         self.min_lag_blocks = max(1, round((60.0 / max_bpm) / self.block_duration))

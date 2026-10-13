@@ -67,8 +67,8 @@ class SongLibrary:
         num_blocks = len(samples) // BLOCK_SIZE
 
         fft_analyzer = FFTAnalyzer(sample_rate=fs, block_size=BLOCK_SIZE)
-        spectral_flux = SpectralFlux(sample_rate=fs, frame_size=BLOCK_SIZE, hop_size=BLOCK_SIZE)
-        onset_detection = OnsetDetection(sample_rate=fs, hop_length=BLOCK_SIZE)
+        spectral_flux = SpectralFlux(sample_rate=fs, block_size=BLOCK_SIZE, hop_size=BLOCK_SIZE)
+        onset_detection = OnsetDetection(sample_rate=fs, block_size=BLOCK_SIZE)
 
         band_names = [band.name for band in DEFAULT_FREQUENCY_BANDS.bands]
         raw_band_energy = np.zeros((num_blocks, 7))

@@ -224,8 +224,8 @@ def test_band_onset_fires_for_a_tone_in_its_own_frequency_band(band_index):
     frequency = bin_frequency_in_band(band)
 
     fft_analyzer = FFTAnalyzer(sample_rate=SAMPLE_RATE, block_size=BLOCK_SIZE)
-    spectral_flux = SpectralFlux(sample_rate=SAMPLE_RATE, frame_size=BLOCK_SIZE, hop_size=BLOCK_SIZE)
-    onset_detection = OnsetDetection(sample_rate=SAMPLE_RATE, hop_length=BLOCK_SIZE, window_duration=0.2)
+    spectral_flux = SpectralFlux(sample_rate=SAMPLE_RATE, block_size=BLOCK_SIZE, hop_size=BLOCK_SIZE)
+    onset_detection = OnsetDetection(sample_rate=SAMPLE_RATE, block_size=BLOCK_SIZE, window_duration=0.2)
 
     def feed(block):
         fft_analyzer.process(block)

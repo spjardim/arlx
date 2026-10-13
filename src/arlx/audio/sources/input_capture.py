@@ -16,7 +16,7 @@ class InputAudioCapture(AudioSource):
         self.device_name = device_name
         self.block_size = block_size
 
-        self.stream: Optional[sd.InputStream] = None
+        self.stream: Optional[sd.InputStream] = None # NOTE: Should we just make the stream up here and start it in start? What is the benefit of making it in start
 
         self.stream_connected = False
 
@@ -33,11 +33,14 @@ class InputAudioCapture(AudioSource):
             self.latest_sample = indata.copy()
             self.latest_timestamp = time_info.inputBufferAdcTime
 
-    def list_potential_devices(self) -> list:
+    def list_potential_input_devices(self) -> list[str]:
         return [device for device in sd.query_devices() if device["max_input_channels"] != 0]
 
     def set_device_name(self, device_name) -> None:
         self.device_name = device_name
+
+    def get_input_stream_sample_rate(self):
+        return sd.query_devices(self.device_name)["default_samplerate"]
 
     def get_latest_sample(self) -> Optional[np.ndarray]:
         with self.lock:

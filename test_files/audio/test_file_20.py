@@ -12,7 +12,7 @@ import dejavu.logic.decoder as decoder
 from dejavu import Dejavu
 
 from arlx.audio.song_library import SongLibrary
-from arlx.audio.test_file_17 import REPO_ROOT, compute_envelope
+from test_files.audio.test_file_17 import REPO_ROOT, compute_envelope
 
 # Plays a song start to finish while showing its *entire* precomputed
 # structure up front (we already know the whole file, so there's no reason to

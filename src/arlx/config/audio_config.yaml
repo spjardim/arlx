@@ -1,0 +1,79 @@
+
+audio_stream:
+  block_size: 1024
+frequency_bands:
+  Sub Bass:
+    low: 20
+    high: 60
+  Bass:
+    low: 60
+    high: 250
+  Low Mid:
+    low: 250
+    high: 500
+  Mid:
+    low: 500
+    high: 2000
+  High Mid:
+    low: 2000
+    high: 4000
+  Presence:
+    low: 4000
+    high: 6000
+  Brilliance:
+    low: 6000
+    high: 20000
+
+fft_analyzer:
+  smooth_attack: 0.5
+  smooth_decay: 0.05
+  attack_db_per_block: 3.0
+  decay_db_per_block: 0.3
+  floor_db: -60
+  use_window: True
+
+spectral_flux:
+  hop_size: 512
+  half_wave_rectify: True
+  use_log_magnitude: True
+  normalize_by_bin_count: True
+  log_epsilon: 1e-6
+
+onset_detection:
+  window_duration: 0.5
+  threshold_multiplier: 1.5
+  refractory_duration: 0.05
+
+tempo_tracker:
+  min_bpm: 70.0
+  max_bpm: 180.0
+  history_duration: 4.0
+  smoothing: 0.2
+
+beat_phase_tracker:
+  correction_strength: 0.25
+  beat_tolerance: 0.2
+
+downbeat_detector:
+  beats_per_bar: 4
+  history_bars: 8
+
+dejavu:
+  database_type: postgres
+  database:
+    host: localhost
+    port: 5432
+    user: postgres
+    password: password
+    database: dejavu
+
+songs:
+  directory: songs
+  extensions: [".flac"]
+
+song_detector:
+  record_seconds: 5
+  detect_every_seconds: 1.0
+  sync_check_seconds: 1.0
+  sync_check_every_seconds: 0.5
+  sync_confidence_threshold: 0.5

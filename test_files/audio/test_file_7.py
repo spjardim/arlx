@@ -27,8 +27,8 @@ fft_analyzer = FFTAnalyzer(
     sample_rate=SAMPLE_RATE,
     block_size=SAMPLES_BLOCK_SIZE,
 )
-spectral_flux = SpectralFlux(sample_rate=SAMPLE_RATE, frame_size=SAMPLES_BLOCK_SIZE, hop_size=SAMPLES_BLOCK_SIZE)
-onset_detection = OnsetDetection(sample_rate=SAMPLE_RATE, hop_length=SAMPLES_BLOCK_SIZE)
+spectral_flux = SpectralFlux(sample_rate=SAMPLE_RATE, block_size=SAMPLES_BLOCK_SIZE, hop_size=SAMPLES_BLOCK_SIZE)
+onset_detection = OnsetDetection(sample_rate=SAMPLE_RATE, block_size=SAMPLES_BLOCK_SIZE)
 
 spec_x = np.fft.fftfreq(SAMPLES_BLOCK_SIZE, d=1.0 / SAMPLE_RATE)[:SAMPLES_BLOCK_SIZE // 2]
 

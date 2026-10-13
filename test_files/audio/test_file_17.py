@@ -44,10 +44,10 @@ def analyze_song(file_path):
     block_duration = BLOCK_SIZE / fs
 
     fft_analyzer = FFTAnalyzer(sample_rate=fs, block_size=BLOCK_SIZE)
-    spectral_flux = SpectralFlux(sample_rate=fs, frame_size=BLOCK_SIZE, hop_size=BLOCK_SIZE)
-    onset_detection = OnsetDetection(sample_rate=fs, hop_length=BLOCK_SIZE)
-    tempo_tracker = TempoTracker(sample_rate=fs, hop_length=BLOCK_SIZE)
-    beat_phase_tracker = BeatPhaseTracker(sample_rate=fs, hop_length=BLOCK_SIZE)
+    spectral_flux = SpectralFlux(sample_rate=fs, block_size=BLOCK_SIZE, hop_size=BLOCK_SIZE)
+    onset_detection = OnsetDetection(sample_rate=fs, block_size=BLOCK_SIZE)
+    tempo_tracker = TempoTracker(sample_rate=fs, block_size=BLOCK_SIZE)
+    beat_phase_tracker = BeatPhaseTracker(sample_rate=fs, block_size=BLOCK_SIZE)
     downbeat_detector = DownbeatDetector()
 
     num_blocks = len(samples) // BLOCK_SIZE

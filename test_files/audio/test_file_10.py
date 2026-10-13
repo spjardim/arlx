@@ -35,10 +35,10 @@ fft_analyzer = FFTAnalyzer(
     sample_rate=SAMPLE_RATE,
     block_size=SAMPLES_BLOCK_SIZE,
 )
-spectral_flux = SpectralFlux(sample_rate=SAMPLE_RATE, frame_size=SAMPLES_BLOCK_SIZE, hop_size=SAMPLES_BLOCK_SIZE)
-onset_detection = OnsetDetection(sample_rate=SAMPLE_RATE, hop_length=SAMPLES_BLOCK_SIZE)
-tempo_tracker = TempoTracker(sample_rate=SAMPLE_RATE, hop_length=SAMPLES_BLOCK_SIZE)
-beat_phase_tracker = BeatPhaseTracker(sample_rate=SAMPLE_RATE, hop_length=SAMPLES_BLOCK_SIZE)
+spectral_flux = SpectralFlux(sample_rate=SAMPLE_RATE, block_size=SAMPLES_BLOCK_SIZE, hop_size=SAMPLES_BLOCK_SIZE)
+onset_detection = OnsetDetection(sample_rate=SAMPLE_RATE, block_size=SAMPLES_BLOCK_SIZE)
+tempo_tracker = TempoTracker(sample_rate=SAMPLE_RATE, block_size=SAMPLES_BLOCK_SIZE)
+beat_phase_tracker = BeatPhaseTracker(sample_rate=SAMPLE_RATE, block_size=SAMPLES_BLOCK_SIZE)
 downbeat_detector = DownbeatDetector()
 
 bpm_history = deque(maxlen=BPM_HISTORY_BLOCKS)

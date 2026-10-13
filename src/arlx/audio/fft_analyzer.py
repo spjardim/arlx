@@ -30,7 +30,19 @@ class FrequencyBand:
 
     def __repr__(self):
         return f"FrequencyBand(name='{self.name}', low_freq={self.low_freq}, high_freq={self.high_freq})"
-    
+
+    def to_dict(self):
+        return {
+            self.name: {
+                "low": self.low_freq,
+                "high": self.high_freq
+            }
+        }
+
+    @classmethod
+    def from_dict(cls, name: str, data: dict) -> "FrequencyBand":
+        return cls(name=name, low_freq=data["low"], high_freq=data["high"])
+
 @dataclass
 class FrequencyBands:
     bands: list[FrequencyBand]
@@ -44,6 +56,17 @@ class FrequencyBands:
                     f"Frequency bands overlap: '{current.name}' ({current.low_freq}-{current.high_freq}) "
                     f"and '{following.name}' ({following.low_freq}-{following.high_freq})"
                 )
+
+    def to_dict(self):
+        bands_dict = {}
+        for band in self.bands:
+            bands_dict.update(band.to_dict())
+
+        return {"frequency_bands": bands_dict}
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "FrequencyBands":
+        return cls([FrequencyBand.from_dict(name, band_data) for name, band_data in data.items()])
 
 DEFAULT_FREQUENCY_BANDS = FrequencyBands([
     FrequencyBand("Sub-bass", 20, 60),

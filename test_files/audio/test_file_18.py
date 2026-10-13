@@ -6,7 +6,7 @@ import librosa
 import matplotlib.pyplot as plt
 import numpy as np
 
-from arlx.audio.test_file_17 import REPO_ROOT, analyze_song, compute_envelope
+from test_files.audio.test_file_17 import REPO_ROOT, analyze_song, compute_envelope
 
 # Compares our own tier0-pipeline beat detection (test_file_17's analyze_song)
 # against librosa's dynamic-programming beat tracker, on the same file. Not

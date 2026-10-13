@@ -8,7 +8,7 @@ class SpectralFlux:
     def __init__(
         self,
         sample_rate: int,
-        frame_size: int = 1024,
+        block_size: int = 1024,
         hop_size: int = 512,
         frequency_bands: FrequencyBands = DEFAULT_FREQUENCY_BANDS,
         half_wave_rectify: bool = True,
@@ -17,7 +17,7 @@ class SpectralFlux:
         log_epsilon: float = 1e-6,
     ):
         self.sample_rate = sample_rate
-        self.frame_size = frame_size
+        self.frame_size = block_size
         self.hop_size = hop_size
         self.frequency_bands = frequency_bands
         self.half_wave_rectify = half_wave_rectify
@@ -25,7 +25,7 @@ class SpectralFlux:
         self.normalize_by_bin_count = normalize_by_bin_count
         self.log_epsilon = log_epsilon
 
-        self.spec_x = np.fft.fftfreq(frame_size, d=1.0 / sample_rate)[:frame_size // 2]
+        self.spec_x = np.fft.fftfreq(block_size, d=1.0 / sample_rate)[:block_size // 2]
 
         self.prev_spectrum = None
         self.global_flux = 0.0

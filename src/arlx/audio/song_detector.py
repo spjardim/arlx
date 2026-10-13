@@ -40,6 +40,7 @@ class SongDetector:
         self.time_since_anchor = 0.0
         self.current_position_estimate = None
 
+        self.current_song_id = None
         self.current_song_name = None
         self.current_song_samples = None
         self.current_song_fs = None
@@ -59,7 +60,7 @@ class SongDetector:
         self.blocks.append(self._to_int16(sample))
         self.sync_check_buffer.append(np.asarray(sample, dtype=np.float32))
 
-        if self.current_song_name is None:
+        if self.current_song_id is None:
             self._try_detect()
         else:
             self._try_sync_check()
@@ -75,13 +76,15 @@ class SongDetector:
             return
 
         top = results[0]
+        song_id = top["song_id"]
         song_name = top["song_name"].decode()
 
         # Load the reference file (if it's a new song) BEFORE publishing the
         # position estimate - otherwise a reader could see a fresh position
         # estimate with no reference data loaded yet.
-        if song_name != self.current_song_name:
+        if song_id != self.current_song_id:
             self._load_reference(song_name)
+            self.current_song_id = song_id
             self.current_song_name = song_name
 
         # offset_seconds is where the START of the fingerprinted window (the
@@ -110,6 +113,7 @@ class SongDetector:
         else:
             # Lost sync (song ended, or a DJ is mixing in something else) -
             # drop back to full re-detection rather than trust a stale guess.
+            self.current_song_id = None
             self.current_song_name = None
             self.current_song_samples = None
             self.current_song_fs = None
@@ -167,6 +171,9 @@ class SongDetector:
     def detect_song_from_samples(self, samples):
         """One-shot recognition from a standalone sample array (no rolling buffer/position tracking)."""
         return self._generate_and_match(self._to_int16(samples))
+
+    def get_song_id(self):
+        return self.current_song_id
 
     def get_song_name(self):
         return self.current_song_name

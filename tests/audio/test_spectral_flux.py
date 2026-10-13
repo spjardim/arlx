@@ -121,7 +121,7 @@ def test_normalize_by_bin_count_false_sums_instead_of_averaging():
 
 def test_band_with_no_bins_in_range_reports_zero_flux():
     empty_band = FrequencyBands([FrequencyBand("none", 10, 20)])
-    flux = SpectralFlux(sample_rate=TINY_SAMPLE_RATE, frame_size=TINY_FRAME_SIZE, hop_size=TINY_FRAME_SIZE, frequency_bands=empty_band)
+    flux = SpectralFlux(sample_rate=TINY_SAMPLE_RATE, block_size=TINY_FRAME_SIZE, hop_size=TINY_FRAME_SIZE, frequency_bands=empty_band)
 
     flux.process(np.array([1.0, 1.0, 1.0, 1.0]))
     flux.process(np.array([1.0, 5.0, 1.0, 1.0]))
@@ -159,7 +159,7 @@ def test_band_flux_spikes_in_the_band_matching_a_new_tone(band_index):
     frequency = bin_frequency_in_band(band)
 
     analyzer = FFTAnalyzer(sample_rate=SAMPLE_RATE, block_size=BLOCK_SIZE)
-    flux = SpectralFlux(sample_rate=SAMPLE_RATE, frame_size=BLOCK_SIZE, hop_size=BLOCK_SIZE)
+    flux = SpectralFlux(sample_rate=SAMPLE_RATE, block_size=BLOCK_SIZE, hop_size=BLOCK_SIZE)
 
     analyzer.process(np.zeros(BLOCK_SIZE, dtype=np.float32))
     flux.process(analyzer.get_raw_fft_data())
