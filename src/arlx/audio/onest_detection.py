@@ -19,17 +19,17 @@ class OnsetDetection:
                  refractory_duration: float = DEFAULT_REFRACTORY_DURATION,
                  ):
         self.sample_rate = sample_rate
-        self.hop_length = block_size
+        self.block_size = block_size
         self.frequency_bands = frequency_bands
         self.window_duration = window_duration
         self.threshold_multiplier = threshold_multiplier
         self.refractory_duration = refractory_duration
 
-        self.block_duration = block_size / sample_rate
-        self.history_length = max(int(window_duration / self.block_duration), 1)
-        self.refractory_blocks = max(int(refractory_duration / self.block_duration), 1)
+        self.block_duration = self.block_size / self.sample_rate
+        self.history_length = max(int(self.window_duration / self.block_duration), 1)
+        self.refractory_blocks = max(int(self.refractory_duration / self.block_duration), 1)
 
-        num_bands = len(frequency_bands.bands)
+        num_bands = len(self.frequency_bands.bands)
 
         self.global_flux_history = deque(maxlen=self.history_length)
         self.band_flux_history = deque(maxlen=self.history_length)
@@ -45,6 +45,69 @@ class OnsetDetection:
 
         self._global_refractory_countdown = 0
         self._band_refractory_countdown = np.zeros(num_bands, dtype=int)
+
+    def get_sample_rate(self):
+        return self.sample_rate
+
+    def set_sample_rate(self, sample_rate: int):
+        self.sample_rate = sample_rate
+        self.block_duration = self.block_size / self.sample_rate
+        self.history_length = max(int(self.window_duration / self.block_duration), 1)
+        self.refractory_blocks = max(int(self.refractory_duration / self.block_duration), 1)
+        self.global_flux_history = deque(maxlen=self.history_length)
+        self.band_flux_history = deque(maxlen=self.history_length)
+
+    def get_block_size(self):
+        return self.block_size
+
+    def set_block_size(self, block_size: int):
+        self.block_size = block_size
+        self.block_duration = self.block_size / self.sample_rate
+        self.history_length = max(int(self.window_duration / self.block_duration), 1)
+        self.refractory_blocks = max(int(self.refractory_duration / self.block_duration), 1)
+        self.global_flux_history = deque(maxlen=self.history_length)
+        self.band_flux_history = deque(maxlen=self.history_length)
+
+    def get_frequency_bands(self) -> FrequencyBands:
+        return self.frequency_bands
+
+    # NOTE: also resets band_flux_history, not just the band-shaped arrays -
+    # old entries in there are sized to the previous band count, and mixing
+    # them with new-shaped entries breaks np.array(band_flux_history) once
+    # warmed_up (ragged/inhomogeneous shape)
+    def set_frequency_bands(self, frequency_bands: FrequencyBands):
+        self.frequency_bands = frequency_bands
+        num_bands = len(self.frequency_bands.bands)
+        self.band_thresholds = np.zeros(num_bands)
+        self.band_onsets = np.zeros(num_bands, dtype=bool)
+        self._prev_band_above = np.zeros(num_bands, dtype=bool)
+        self._band_refractory_countdown = np.zeros(num_bands, dtype=int)
+        self.band_flux_history = deque(maxlen=self.history_length)
+
+    def get_window_duration(self) -> float:
+        return self.window_duration
+
+    # NOTE: resizes the flux-history deques to the new window, keeping whatever
+    # history already fits rather than wiping it (unlike the band-count resets
+    # elsewhere, this doesn't change the shape of what's stored, just how much)
+    def set_window_duration(self, window_duration: float):
+        self.window_duration = window_duration
+        self.history_length = max(int(self.window_duration / self.block_duration), 1)
+        self.global_flux_history = deque(self.global_flux_history, maxlen=self.history_length)
+        self.band_flux_history = deque(self.band_flux_history, maxlen=self.history_length)
+
+    def get_threshold_multiplier(self) -> float:
+        return self.threshold_multiplier
+
+    def set_threshold_multiplier(self, threshold_multiplier: float):
+        self.threshold_multiplier = threshold_multiplier
+
+    def get_refractory_duration(self) -> float:
+        return self.refractory_duration
+
+    def set_refractory_duration(self, refractory_duration: float):
+        self.refractory_duration = refractory_duration
+        self.refractory_blocks = max(int(refractory_duration / self.block_duration), 1)
 
     def get_global_onset(self) -> bool:
         return self.global_onset

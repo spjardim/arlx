@@ -14,7 +14,7 @@ class BeatPhaseTracker:
         self.correction_strength = correction_strength
         self.beat_tolerance = beat_tolerance
 
-        self.block_duration = block_size / sample_rate
+        self.block_duration = self.hop_length / self.sample_rate
 
         self.elapsed_time = 0.0
         self.period = 0.0
@@ -23,6 +23,32 @@ class BeatPhaseTracker:
         self.phase = 0.0
         self.beat_now = False
         self.next_beat_in = 0.0
+
+    def get_sample_rate(self):
+        return self.sample_rate
+
+    def set_sample_rate(self, sample_rate: int):
+        self.sample_rate = sample_rate
+        self.block_duration = self.hop_length / self.sample_rate
+
+    def get_block_size(self):
+        return self.hop_length
+
+    def set_block_size(self, block_size: int):
+        self.hop_length = block_size
+        self.block_duration = self.hop_length / self.sample_rate
+
+    def get_correction_strength(self) -> float:
+        return self.correction_strength
+
+    def set_correction_strength(self, correction_strength: float):
+        self.correction_strength = correction_strength
+
+    def get_beat_tolerance(self) -> float:
+        return self.beat_tolerance
+
+    def set_beat_tolerance(self, beat_tolerance: float):
+        self.beat_tolerance = beat_tolerance
 
     def get_phase(self) -> float:
         return self.phase

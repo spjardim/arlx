@@ -9,7 +9,6 @@ class SpectralFlux:
         self,
         sample_rate: int,
         block_size: int = 1024,
-        hop_size: int = 512,
         frequency_bands: FrequencyBands = DEFAULT_FREQUENCY_BANDS,
         half_wave_rectify: bool = True,
         use_log_magnitude: bool = True,
@@ -17,19 +16,66 @@ class SpectralFlux:
         log_epsilon: float = 1e-6,
     ):
         self.sample_rate = sample_rate
-        self.frame_size = block_size
-        self.hop_size = hop_size
+        self.block_size = block_size
         self.frequency_bands = frequency_bands
         self.half_wave_rectify = half_wave_rectify
         self.use_log_magnitude = use_log_magnitude
         self.normalize_by_bin_count = normalize_by_bin_count
         self.log_epsilon = log_epsilon
 
-        self.spec_x = np.fft.fftfreq(block_size, d=1.0 / sample_rate)[:block_size // 2]
+        self.spec_x = np.fft.fftfreq(self.block_size, d=1.0 / self.sample_rate)[:self.block_size // 2]
 
         self.prev_spectrum = None
         self.global_flux = 0.0
         self.band_fluxes = np.zeros(len(frequency_bands.bands))
+
+    def get_sample_rate(self):
+        return self.sample_rate
+
+    def set_sample_rate(self, sample_rate: int):
+        self.sample_rate = sample_rate
+        self.spec_x = np.fft.fftfreq(self.block_size, d=1.0 / self.sample_rate)[:self.block_size // 2]
+    
+    def get_block_size(self):
+        return self.block_size
+
+    # NOTE: prev_spectrum was captured at the old block_size, so a diff against
+    # it next process() call would be a shape mismatch - drop it and let the
+    # next call re-arm as a "first call" like __init__ does
+    def set_block_size(self, block_size: int):
+        self.block_size = block_size
+        self.spec_x = np.fft.fftfreq(self.block_size, d=1.0 / self.sample_rate)[:self.block_size // 2]
+        self.prev_spectrum = None
+
+    def get_frequency_bands(self) -> FrequencyBands:
+        return self.frequency_bands
+
+    def set_frequency_bands(self, frequency_bands: FrequencyBands):
+        self.frequency_bands = frequency_bands
+        
+    def get_half_wave_rectify(self) -> bool:
+        return self.half_wave_rectify
+
+    def set_half_wave_rectify(self, half_wave_rectify: bool):
+        self.half_wave_rectify = half_wave_rectify
+
+    def get_use_log_magnitude(self) -> bool:
+        return self.use_log_magnitude
+
+    def set_use_log_magnitude(self, use_log_magnitude: bool):
+        self.use_log_magnitude = use_log_magnitude
+
+    def get_normalize_by_bin_count(self) -> bool:
+        return self.normalize_by_bin_count
+
+    def set_normalize_by_bin_count(self, normalize_by_bin_count: bool):
+        self.normalize_by_bin_count = normalize_by_bin_count
+
+    def get_log_epsilon(self) -> float:
+        return self.log_epsilon
+
+    def set_log_epsilon(self, log_epsilon: float):
+        self.log_epsilon = log_epsilon
 
     def _to_diff_scale(self, spectrum: np.ndarray) -> np.ndarray:
         if self.use_log_magnitude:

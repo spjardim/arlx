@@ -14,11 +14,33 @@ class DownbeatDetector:
         self.beats_per_bar = beats_per_bar
         self.history_bars = history_bars
 
-        self.position_strength_history = [deque(maxlen=history_bars) for _ in range(beats_per_bar)]
+        self.position_strength_history = [deque(maxlen=self.history_bars) for _ in range(self.beats_per_bar)]
 
         self.beat_index = 0
         self.downbeat_offset = 0
         self.is_downbeat = False
+
+    def get_beats_per_bar(self) -> int:
+        return self.beats_per_bar
+
+    # NOTE: changing the bucket count invalidates the beat_index -> bucket
+    # mapping, so this resets position history/tracking state the same way a
+    # band-count change resets FFTAnalyzer's bins
+    def set_beats_per_bar(self, beats_per_bar: int):
+        self.beats_per_bar = beats_per_bar
+        self.position_strength_history = [deque(maxlen=self.history_bars) for _ in range(beats_per_bar)]
+        self.beat_index = 0
+        self.downbeat_offset = 0
+        self.is_downbeat = False
+
+    def get_history_bars(self) -> int:
+        return self.history_bars
+
+    def set_history_bars(self, history_bars: int):
+        self.history_bars = history_bars
+        self.position_strength_history = [
+            deque(history, maxlen=history_bars) for history in self.position_strength_history
+        ]
 
     def get_beat_index(self) -> int:
         return self.beat_index

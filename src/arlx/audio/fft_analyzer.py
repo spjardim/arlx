@@ -111,15 +111,81 @@ class FFTAnalyzer:
 
         self.raw_fft_data = np.zeros(block_size // 2)
 
-        self.mean_fft_bins = np.zeros(7)
-        self.rms_fft_bins = np.zeros(7)
-        self.log_rms_fft_bins = np.zeros(7)
-        self.norm_fft_bins = np.zeros(7)
-        self.smoothed_norm_bins = np.zeros(7)
+        self.mean_fft_bins = np.zeros(len(self.frequency_bands.bands))
+        self.rms_fft_bins = np.zeros(len(self.frequency_bands.bands))
+        self.log_rms_fft_bins = np.zeros(len(self.frequency_bands.bands))
+        self.norm_fft_bins = np.zeros(len(self.frequency_bands.bands))
+        self.smoothed_norm_bins = np.zeros(len(self.frequency_bands.bands))
 
-        self.running_max_db = np.full(7, FLOOR_DB, dtype=float) 
+        self.running_max_db = np.full(len(self.frequency_bands.bands), FLOOR_DB, dtype=float) 
 
         self.spec_x = np.fft.fftfreq(self.block_size, d=1.0 / self.sample_rate)[:self.block_size // 2]
+
+    def get_sample_rate(self):
+        return self.sample_rate
+
+    def set_sample_rate(self, sample_rate: int):
+        self.sample_rate = sample_rate
+        self.spec_x = np.fft.fftfreq(self.block_size, d=1.0 / self.sample_rate)[:self.block_size // 2]
+
+    def get_block_size(self):
+        return self.block_size
+
+    def set_block_size(self, block_size: int):
+        self.block_size = block_size
+        self.window = np.hanning(block_size)
+        self.raw_fft_data = np.zeros(block_size // 2)
+        self.spec_x = np.fft.fftfreq(self.block_size, d=1.0 / self.sample_rate)[:self.block_size // 2]
+
+    def get_frequency_bands(self):
+        return self.frequency_bands
+
+    def set_frequency_bands(self, frequency_bands: FrequencyBands):
+        self.frequency_bands = frequency_bands
+
+        self.mean_fft_bins = np.zeros(len(self.frequency_bands.bands))
+        self.rms_fft_bins = np.zeros(len(self.frequency_bands.bands))
+        self.log_rms_fft_bins = np.zeros(len(self.frequency_bands.bands))
+        self.norm_fft_bins = np.zeros(len(self.frequency_bands.bands))
+        self.smoothed_norm_bins = np.zeros(len(self.frequency_bands.bands))
+
+        self.running_max_db = np.full(len(self.frequency_bands.bands), FLOOR_DB, dtype=float) 
+
+    def get_smooth_attack(self):
+        return self.smooth_attack
+
+    def set_smooth_attack(self, smooth_attack: float):
+        self.smooth_attack = smooth_attack
+
+    def get_smooth_decay(self):
+        return self.smooth_decay
+
+    def set_smooth_decay(self, smooth_decay: float):
+        self.smooth_decay = smooth_decay
+
+    def get_attack_db_per_block(self):
+        return self.attack_db_per_block
+
+    def set_attack_db_per_block(self, attack_db_per_block: float):
+        self.attack_db_per_block = attack_db_per_block
+
+    def get_decay_db_per_block(self):
+        return self.decay_db_per_block
+
+    def set_decay_db_per_block(self, decay_db_per_block: float):
+        self.decay_db_per_block = decay_db_per_block
+
+    def get_floor_db(self):
+        return self.floor_db
+
+    def set_floor_db(self, floor_db: float):
+        self.floor_db = floor_db
+
+    def get_use_window(self):
+        return self.use_window
+
+    def set_use_window(self, use_window: bool):
+        self.use_window = use_window
 
     def get_raw_fft_data(self) -> np.ndarray:
         return self.raw_fft_data.copy()

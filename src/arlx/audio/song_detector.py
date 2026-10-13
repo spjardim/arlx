@@ -6,17 +6,27 @@ import numpy as np
 import dejavu.logic.decoder as decoder
 
 class SongDetector:
-    def __init__(self, dejavu_instance, record_seconds=5, sample_rate=44100, block_size=1024,
-                 detect_every_seconds=1.0, sync_check_seconds=1.0, sync_check_every_seconds=0.5,
+    def __init__(self, 
+                 dejavu_instance, 
+                 record_seconds=5, 
+                 sample_rate=44100, 
+                 block_size=1024,
+                 detect_every_seconds=1.0, 
+                 sync_check_seconds=1.0, 
+                 sync_check_every_seconds=0.5,
                  sync_confidence_threshold=0.5):
         self.dejavu = dejavu_instance
         self.sample_rate = sample_rate
         self.block_size = block_size
+        self.detect_every_seconds = detect_every_seconds
         self.block_duration = block_size / sample_rate
         self.record_seconds = record_seconds
+        self.sync_check_seconds = sync_check_seconds
+        self.sync_check_every_seconds = sync_check_every_seconds
+        self.sync_confidence_threshold = sync_confidence_threshold
 
-        self.block_needed = int(record_seconds * sample_rate / block_size)
-        self.detect_every_blocks = max(int(detect_every_seconds / self.block_duration), 1)
+        self.block_needed = int(self.record_seconds * self.sample_rate / self.block_size)
+        self.detect_every_blocks = max(int(self.detect_every_seconds / self.block_duration), 1)
         self.blocks = deque(maxlen=self.block_needed)
         self._block_count = 0
 
@@ -24,9 +34,8 @@ class SongDetector:
         # to a much cheaper check: does recent live audio still correlate with
         # the known reference at our estimated position? No spectrogram,
         # hashing, or DB lookup - just a direct waveform comparison.
-        self.sync_check_blocks_needed = max(int(sync_check_seconds * sample_rate / block_size), 1)
-        self.sync_check_every_blocks = max(int(sync_check_every_seconds / self.block_duration), 1)
-        self.sync_confidence_threshold = sync_confidence_threshold
+        self.sync_check_blocks_needed = max(int(self.sync_check_seconds * self.sample_rate / self.block_size), 1)
+        self.sync_check_every_blocks = max(int(self.sync_check_every_seconds / self.block_duration), 1)
         self.sync_check_buffer = deque(maxlen=self.sync_check_blocks_needed)
         self.sync_confidence = 0.0
 
@@ -44,6 +53,68 @@ class SongDetector:
         self.current_song_name = None
         self.current_song_samples = None
         self.current_song_fs = None
+
+    def get_sample_rate(self):
+        return self.sample_rate
+
+    def set_sample_rate(self, sample_rate: int):
+        self.sample_rate = sample_rate
+        self._recompute_derived()
+
+    def get_block_size(self):
+        return self.block_size
+
+    def set_block_size(self, block_size: int):
+        self.block_size = block_size
+        self._recompute_derived()
+
+    # NOTE: every block-count derived from sample_rate/block_size in __init__
+    # (block_needed, detect_every_blocks, sync_check_blocks_needed,
+    # sync_check_every_blocks) plus the two deques sized off them
+    def _recompute_derived(self):
+        self.block_duration = self.block_size / self.sample_rate
+        self.block_needed = int(self.record_seconds * self.sample_rate / self.block_size)
+        self.detect_every_blocks = max(int(self.detect_every_seconds / self.block_duration), 1)
+        self.sync_check_blocks_needed = max(int(self.sync_check_seconds * self.sample_rate / self.block_size), 1)
+        self.sync_check_every_blocks = max(int(self.sync_check_every_seconds / self.block_duration), 1)
+        self.blocks = deque(self.blocks, maxlen=self.block_needed)
+        self.sync_check_buffer = deque(self.sync_check_buffer, maxlen=self.sync_check_blocks_needed)
+
+    def get_record_seconds(self) -> float:
+        return self.record_seconds
+
+    def set_record_seconds(self, record_seconds: float):
+        self.record_seconds = record_seconds
+        self.block_needed = int(record_seconds * self.sample_rate / self.block_size)
+        self.blocks = deque(self.blocks, maxlen=self.block_needed)
+
+    def get_detect_every_seconds(self) -> float:
+        return self.detect_every_seconds
+
+    def set_detect_every_seconds(self, detect_every_seconds: float):
+        self.detect_every_seconds = detect_every_seconds
+        self.detect_every_blocks = max(int(detect_every_seconds / self.block_duration), 1)
+
+    def get_sync_check_seconds(self) -> float:
+        return self.sync_check_seconds
+
+    def set_sync_check_seconds(self, sync_check_seconds: float):
+        self.sync_check_seconds = sync_check_seconds
+        self.sync_check_blocks_needed = max(int(sync_check_seconds * self.sample_rate / self.block_size), 1)
+        self.sync_check_buffer = deque(self.sync_check_buffer, maxlen=self.sync_check_blocks_needed)
+
+    def get_sync_check_every_seconds(self) -> float:
+        return self.sync_check_every_seconds
+
+    def set_sync_check_every_seconds(self, sync_check_every_seconds: float):
+        self.sync_check_every_seconds = sync_check_every_seconds
+        self.sync_check_every_blocks = max(int(sync_check_every_seconds / self.block_duration), 1)
+
+    def get_sync_confidence_threshold(self) -> float:
+        return self.sync_confidence_threshold
+
+    def set_sync_confidence_threshold(self, sync_confidence_threshold: float):
+        self.sync_confidence_threshold = sync_confidence_threshold
 
     def fingerprint_directory(self, directory_path, extensions):
         self.dejavu.fingerprint_directory(directory_path, extensions)

@@ -172,6 +172,6 @@ def test_list_potential_devices_filters_out_devices_with_zero_input_channels(moc
     ]
 
     capture = InputAudioCapture()
-    devices = capture.list_potential_input_devices()
+    devices = capture.get_potential_input_devices()
 
     assert [device["name"] for device in devices] == ["Mic", "Interface"]

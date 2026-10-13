@@ -33,7 +33,6 @@ fft_analyzer:
   use_window: True
 
 spectral_flux:
-  hop_size: 512
   half_wave_rectify: True
   use_log_magnitude: True
   normalize_by_bin_count: True

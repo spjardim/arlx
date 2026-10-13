@@ -7,7 +7,7 @@ import psycopg2.extras
 
 import dejavu.logic.decoder as decoder
 
-from arlx.audio.fft_analyzer import FFTAnalyzer, DEFAULT_FREQUENCY_BANDS
+from arlx.audio.fft_analyzer import FFTAnalyzer, FrequencyBands, DEFAULT_FREQUENCY_BANDS
 from arlx.audio.spectral_flux import SpectralFlux
 from arlx.audio.onest_detection import OnsetDetection
 from arlx.audio.downbeat_detector import DownbeatDetector
@@ -20,11 +20,25 @@ class SongLibrary:
     caches the full tier0 feature timeline for it, so nothing has to be
     computed live once SongDetector confirms which song is playing."""
 
-    def __init__(self, dejavu_instance, db_config):
+    def __init__(self, dejavu_instance, db_config, block_size: int = BLOCK_SIZE, frequency_bands: FrequencyBands = DEFAULT_FREQUENCY_BANDS):
         self.dejavu = dejavu_instance
         self.connection = psycopg2.connect(**db_config)
         self.connection.autocommit = True
+        self.block_size = block_size
+        self.frequency_bands = frequency_bands
         self._create_table()
+
+    def get_block_size(self) -> int:
+        return self.block_size
+
+    def set_block_size(self, block_size: int):
+        self.block_size = block_size
+
+    def get_frequency_bands(self):
+        return self.frequency_bands
+
+    def set_frequency_bands(self, frequency_bands: FrequencyBands):
+        self.frequency_bands = frequency_bands
 
     def add_song(self, file_path):
         file_path = Path(file_path)
@@ -63,15 +77,16 @@ class SongLibrary:
         # first one - we have the full stereo file here (unlike live mono mic
         # capture), so there's no reason to silently discard the other channel.
         samples = np.mean([channel.astype(np.float32) for channel in channels], axis=0) / 32767.0
-        block_duration = BLOCK_SIZE / fs
-        num_blocks = len(samples) // BLOCK_SIZE
+        block_duration = self.block_size / fs
+        num_blocks = len(samples) // self.block_size
 
-        fft_analyzer = FFTAnalyzer(sample_rate=fs, block_size=BLOCK_SIZE)
-        spectral_flux = SpectralFlux(sample_rate=fs, block_size=BLOCK_SIZE, hop_size=BLOCK_SIZE)
-        onset_detection = OnsetDetection(sample_rate=fs, block_size=BLOCK_SIZE)
+        # NOTE: For this how should these classes be picked, i.e. the parameters
+        fft_analyzer = FFTAnalyzer(sample_rate=fs, block_size=self.block_size)
+        spectral_flux = SpectralFlux(sample_rate=fs, block_size=self.block_size)
+        onset_detection = OnsetDetection(sample_rate=fs, block_size=self.block_size)
 
-        band_names = [band.name for band in DEFAULT_FREQUENCY_BANDS.bands]
-        raw_band_energy = np.zeros((num_blocks, 7))
+        band_names = [band.name for band in self.frequency_bands]
+        raw_band_energy = np.zeros((num_blocks, len(band_names)))
         global_flux = np.zeros(num_blocks)
         overall_rms = np.zeros(num_blocks)
         overall_peak = np.zeros(num_blocks)
@@ -79,7 +94,7 @@ class SongLibrary:
         band_onset_times = {name: [] for name in band_names}
 
         for i in range(num_blocks):
-            block = samples[i * BLOCK_SIZE:(i + 1) * BLOCK_SIZE]
+            block = samples[i * self.block_size:(i + 1) * self.block_size]
             fft_analyzer.process(block)
             spectral_flux.process(fft_analyzer.get_raw_fft_data())
             onset_detection.process(spectral_flux.get_global_flux(), spectral_flux.get_band_fluxes())

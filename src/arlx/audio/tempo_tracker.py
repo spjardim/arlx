@@ -18,23 +18,91 @@ class TempoTracker:
                  smoothing: float = DEFAULT_SMOOTHING,
                  ):
         self.sample_rate = sample_rate
-        self.hop_length = block_size
+        self.block_size = block_size
         self.min_bpm = min_bpm
         self.max_bpm = max_bpm
         self.history_duration = history_duration
         self.smoothing = smoothing
 
-        self.block_duration = block_size / sample_rate
-        self.history_length = max(int(history_duration / self.block_duration), 1)
+        self.block_duration = self.block_size / self.sample_rate
+        self.history_length = max(int(self.history_duration / self.block_duration), 1)
 
-        self.min_lag_blocks = max(1, round((60.0 / max_bpm) / self.block_duration))
-        self.max_lag_blocks = max(self.min_lag_blocks + 1, round((60.0 / min_bpm) / self.block_duration))
+        self.min_lag_blocks = max(1, round((60.0 / self.max_bpm) / self.block_duration))
+        self.max_lag_blocks = max(self.min_lag_blocks + 1, round((60.0 / self.min_bpm) / self.block_duration))
         self.max_lag_blocks = min(self.max_lag_blocks, self.history_length - 1)
 
         self.onset_history = deque(maxlen=self.history_length)
 
         self.bpm = 0.0
         self.confidence = 0.0
+        self.autocorrelation = np.zeros(self.max_lag_blocks - self.min_lag_blocks + 1)
+
+    def get_sample_rate(self):
+        return self.sample_rate
+
+    def set_sample_rate(self, sample_rate: int):
+        self.sample_rate = sample_rate
+
+        self.block_duration = self.block_size / self.sample_rate
+        self.history_length = max(int(self.history_duration / self.block_duration), 1)
+
+        self.min_lag_blocks = max(1, round((60.0 / self.max_bpm) / self.block_duration))
+        self.max_lag_blocks = max(self.min_lag_blocks + 1, round((60.0 / self.min_bpm) / self.block_duration))
+        self.max_lag_blocks = min(self.max_lag_blocks, self.history_length - 1)
+
+        self.onset_history = deque(maxlen=self.history_length)
+
+        self.autocorrelation = np.zeros(self.max_lag_blocks - self.min_lag_blocks + 1)
+
+    def get_block_size(self):
+        return self.block_size
+
+    def set_block_size(self, block_size: int):
+        self.block_size = block_size
+        self.block_duration = self.block_size / self.sample_rate
+        self.history_length = max(int(self.history_duration / self.block_duration), 1)
+
+        self.min_lag_blocks = max(1, round((60.0 / self.max_bpm) / self.block_duration))
+        self.max_lag_blocks = max(self.min_lag_blocks + 1, round((60.0 / self.min_bpm) / self.block_duration))
+        self.max_lag_blocks = min(self.max_lag_blocks, self.history_length - 1)
+
+        self.onset_history = deque(maxlen=self.history_length)
+
+        self.autocorrelation = np.zeros(self.max_lag_blocks - self.min_lag_blocks + 1)
+
+    def get_min_bpm(self) -> float:
+        return self.min_bpm
+
+    def set_min_bpm(self, min_bpm: float):
+        self.min_bpm = min_bpm
+        self._recompute_lag_bounds()
+
+    def get_max_bpm(self) -> float:
+        return self.max_bpm
+
+    def set_max_bpm(self, max_bpm: float):
+        self.max_bpm = max_bpm
+        self._recompute_lag_bounds()
+
+    def get_history_duration(self) -> float:
+        return self.history_duration
+
+    def set_history_duration(self, history_duration: float):
+        self.history_duration = history_duration
+        self.history_length = max(int(history_duration / self.block_duration), 1)
+        self.onset_history = deque(self.onset_history, maxlen=self.history_length)
+        self._recompute_lag_bounds()
+
+    def get_smoothing(self) -> float:
+        return self.smoothing
+
+    def set_smoothing(self, smoothing: float):
+        self.smoothing = smoothing
+
+    def _recompute_lag_bounds(self):
+        self.min_lag_blocks = max(1, round((60.0 / self.max_bpm) / self.block_duration))
+        self.max_lag_blocks = max(self.min_lag_blocks + 1, round((60.0 / self.min_bpm) / self.block_duration))
+        self.max_lag_blocks = min(self.max_lag_blocks, self.history_length - 1)
         self.autocorrelation = np.zeros(self.max_lag_blocks - self.min_lag_blocks + 1)
 
     def get_bpm(self) -> float:

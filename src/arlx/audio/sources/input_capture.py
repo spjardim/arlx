@@ -24,21 +24,27 @@ class InputAudioCapture(AudioSource):
         self.latest_sample: Optional[np.ndarray] = None
         self.latest_timestamp: Optional[float] = None
         self.last_timestamp: Optional[float] = None
-    
-    def callback(self, indata, frames, time_info, status):
-        if status.input_overflow:
-            log.warning("audio input overflow, samples were dropped")
 
-        with self.lock:
-            self.latest_sample = indata.copy()
-            self.latest_timestamp = time_info.inputBufferAdcTime
 
-    def list_potential_input_devices(self) -> list[str]:
-        return [device for device in sd.query_devices() if device["max_input_channels"] != 0]
+    def get_device_name(self):
+        return self.device_name
 
     def set_device_name(self, device_name) -> None:
         self.device_name = device_name
 
+    def get_block_size(self):
+        return self.block_size
+
+    def set_block_size(self, block_size: int):
+        self.block_size = block_size
+
+    def get_potential_input_devices(self) -> list[str]:
+        return [device for device in sd.query_devices() if device["max_input_channels"] != 0]
+
+    def is_stream_connected(self):
+        # NOTE: Should we use stream active as our asbolute or both, but alert when they both don't agree
+        return self.stream_connected and self.stream.active
+    
     def get_input_stream_sample_rate(self):
         return sd.query_devices(self.device_name)["default_samplerate"]
 
@@ -53,6 +59,16 @@ class InputAudioCapture(AudioSource):
                 return True, self.latest_sample, self.latest_timestamp
         else:
             return False, None, None
+
+    
+    def callback(self, indata, frames, time_info, status):
+        if status.input_overflow:
+            log.warning("audio input overflow, samples were dropped")
+
+        with self.lock:
+            self.latest_sample = indata.copy()
+            self.latest_timestamp = time_info.inputBufferAdcTime
+
         
     def start(self) -> bool:
         try:
