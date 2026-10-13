@@ -25,8 +25,8 @@ class FrequencyBand:
 
     def __eq__(self, other):
         if not isinstance(other, FrequencyBand):
-            return NotImplemented
-        return self.low_freq == other.low_freq and self.high_freq == other.high_freq
+            return False
+        return self.low_freq == other.low_freq and self.high_freq == other.high_freq and self.name == other.name
 
     def __repr__(self):
         return f"FrequencyBand(name='{self.name}', low_freq={self.low_freq}, high_freq={self.high_freq})"
@@ -56,6 +56,12 @@ class FrequencyBands:
                     f"Frequency bands overlap: '{current.name}' ({current.low_freq}-{current.high_freq}) "
                     f"and '{following.name}' ({following.low_freq}-{following.high_freq})"
                 )
+
+    def __eq__(self, other):
+        if not isinstance(other, FrequencyBands):
+            return False
+
+        return self.bands == other.bands
 
     def to_dict(self):
         bands_dict = {}
